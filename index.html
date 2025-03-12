@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Integrales Paso a Paso</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+    <script type="text/javascript" async 
+        src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script type="text/javascript" async 
+        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
+        input, button { margin: 5px; padding: 10px; font-size: 18px; }
+        .output { margin-top: 20px; font-size: 20px; text-align: left; display: inline-block; max-width: 600px; margin: auto; }
+    </style>
+</head>
+<body>
+    <h1>Calculadora de Integrales Paso a Paso</h1>
+    <p>Ingresa la función que deseas integrar:</p>
+    <input type="text" id="funcion" placeholder="Ejemplo: x^2, sin(x), e^x, x*cos(x)">
+    <br>
+    <button onclick="calcularIntegral()">Calcular Integral</button>
+    <div id="content">
+        <div class="output" id="resultado"></div>
+    </div>
+
+    <script>
+        function descargarPDF() {
+            html2canvas(document.getElementById('content')).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jspdf.jsPDF();
+                pdf.addImage(imgData, 'PNG', 10, 10);
+                pdf.save('descarga.pdf');
+
+                // Recarga la página después de 2 segundos
+                setTimeout(() => {
+                    location.reload();
+                }, 2000);
+            });
+        }
+
+        function calcularIntegral() {
+            let funcion = document.getElementById("funcion").value.trim().replace(/\s+/g, ""); // Elimina espacios en blanco
+
+            if (funcion === "") {
+                document.getElementById("resultado").innerHTML = "<p style='color:red;'>Por favor, ingresa una función.</p>";
+                return;
+            }
+
+            let resultadoHTML = `<p><b>Integral a resolver:</b> \\( \\int ${funcion} \\,dx \\)</p>`;
+
+            // Resolver la integral paso a paso
+            let pasos = resolverIntegral(funcion);
+            resultadoHTML += `<p><b>Paso a Paso:</b><br> ${pasos.replace(/\n/g, "<br>")}</p>`;
+
+            document.getElementById("resultado").innerHTML = resultadoHTML;
+            MathJax.typeset(); // Renderiza las ecuaciones matemáticas correctamente
+
+            // Descarga el PDF automáticamente
+            descargarPDF();
+        }
+
+        function resolverIntegral(funcion) {
+            let pasos = "";
+
+            // 📌 Integral de x^n (incluye el caso x^1)
+            if (/^x(\^([0-9]+))?$/.test(funcion)) {
+                let exponente = funcion incluye("^") ? parseInt(funcion.split("^")[1]) : 1;
+                let nuevoExponente = exponente + 1;
+                let coeficiente = `\\frac{1}{${nuevoExponente}}`;
+                pasos += `1. Aplicamos la regla de la potencia: \\( \\int x^n \\,dx = \\frac{x^{n+1}}{n+1} + C \\)\n`;
+                pasos += `2. Para \\( x^${exponente} \\), obtenemos: \\( ${coeficiente} x^${nuevoExponente} + C \\)`;
+                return pasos;
+            }
+
+            // 📌 Integral de sin(x)
+            if (funcion === "sin(x)") {
+                pasos += "1. Aplicamos la regla: \\( \\int \\sin(x) \\,dx = -\\cos(x) + C \\)";
+                return pasos;
+            }
+
+            // 📌 Integral de cos(x)
+            if (funcion === "cos(x)") {
+                pasos += "1. Aplicamos la regla: \\( \\int \\cos(x) \\,dx = \\sin(x) + C \\)";
+                return pasos;
+            }
+
+            // 📌 Integral de e^x
+            if (funcion === "e^x") {
+                pasos += "1. Aplicamos la regla: \\( \\int e^x \\,dx = e^x + C \\)";
+                return pasos;
+            }
+
+            // 📌 Integral de x*cos(x) (Integración por partes) - Ahora detecta xcos(x), x*cos(x) y x cos(x)
+            if (/^x\*?cos\(x\)$/.test(funcion)) {
+                pasos += "1. Usamos integración por partes: \\( \\int u dv = uv - \\int v du \\)\n";
+                pasos += "2. Definimos \\( u = x \\) y \\( dv = \\cos(x)dx \\)\n";
+                pasos += "3. Derivamos \\( u \\Rightarrow du = dx \\)\n";
+                pasos += "4. Integramos \\( dv \\Rightarrow v = \\sin(x) \\)\n";
+                pasos += "5. Aplicamos la fórmula: \\( x\\sin(x) - \\int \\sin(x)dx \\)\n";
+                pasos += "6. Como \\( \\int \\sin(x)dx = -\\cos(x) \\), tenemos:\n";
+                pasos += "\\( x\\sin(x) + \\cos(x) + C \\)";
+                return pasos;
+            }
+
+            // 📌 Integral de x*e^x (Integración por partes) - Ahora detecta xex, x*e^x y x e^x
+            if (/^x\*?e\^x$/.test(funcion)) {
+                pasos += "1. Usamos integración por partes: \\( \\int u dv = uv - \\int v du \\)\n";
+                pasos += "2. Definimos \\( u = x \\) y \\( dv = e^x dx \\)\n";
+                pasos += "3. Derivamos \\( u \\Rightarrow du = dx \\)\n";
+                pasos += "4. Integramos \\( dv \\Rightarrow v = e^x \\)\n";
+                pasos += "5. Aplicamos la fórmula: \\( x e^x - \\int e^x dx \\)\n";
+                pasos += "6. Como \\( \\int e^x dx = e^x \\), obtenemos:\n";
+                pasos += "\\( x e^x - e^x + C \\)";
+                return pasos;
+            }
+
+            // 📌 Si la función no es reconocida, devolver un mensaje con recomendaciones
+            pasos += `No se encontró una regla automática para "${funcion}".\n`;
+            pasos += "⚡ Sugerencias:\n";
+            pasos += "- Usa notación estándar como x^2 en lugar de x**2.\n";
+            pasos += "- Para productos como x*cos(x), escribe 'x*cos(x)', 'x cos(x)' o 'xcos(x)'.\n";
+            pasos += "- Actualmente se soportan: x^n, sin(x), cos(x), e^x, x*cos(x), x*e^x.\n";
+            return pasos;
+        }
+    </script>
+</body>
+</html>
